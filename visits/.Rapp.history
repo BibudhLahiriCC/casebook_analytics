@@ -1,0 +1,181 @@
+date()
+time()
+x <- [1,2,3]
+x <- 1
+x
+library(RPostgreSQL)
+?install
+?library
+install.packages(RPostgreSQL)
+drv <- dbDriver("PostgreSQL")
+getwd()
+?dbDriver
+??dbDriver
+library(RJDBC)
+quit()
+install.packages(dbi)
+drv <- dbDriver("PostgreSQL")
+library('RPostgreSQL')
+install.packages('RPostgreSQL')
+library('RPostgreSQL')
+?dbDriver
+drv <- dbDriver("PostgreSQL")
+??dbDriver
+drv <- dbDriver('PostgreSQL')
+library(dbi)
+install.packages(dbi)
+??dbDriver
+?library
+libPaths()
+?library
+library(lib.loc = .Library)
+drv <- dbDriver('PostgreSQL')
+con <- dbConnect(PostgreSQL(), user= "bibudhlahiri", dbname="casebook2_development")
+?dbDriver
+?dbConnect
+??dbDriver
+library(RPostgreSQL)
+??dbDriver
+?dbConnect
+??dbConnect
+drv <- dbDriver("PostgreSQL")
+?dbDriver
+drv <- DBI.dbDriver("PostgreSQL")
+library(DBI)
+drv <- dbDriver("PostgreSQL")
+library(RPostgreSQL)
+quit()
+system("env")
+Sys.setenv("PATH" = paste(Sys.getenv("PATH"),"/usr/local/bin/postgres",sep=":"))
+system("env")
+library(DBI)
+drv <- dbDriver("PostgreSQL")
+q()
+setwd('/Users/bibudhlahiri/casebook_analytics/visits');
+source('no_visit_in_n_days.R');
+n_children_in_placement('2011-07-13');
+source('no_visit_in_n_days.R');
+n_children_in_placement('2011-07-13');
+data
+n_children_in_placement('2011-07-13');
+mydata <- n_children_in_placement('2011-07-13');
+mydata
+mydata$count
+class(mydata$count)
+n_children_in_placement('2011-07-13');
+source('no_visit_in_n_days.R');
+n_children_in_placement('2011-07-13');
+?nrow
+source('no_visit_in_n_days.R');
+source('no_visit_in_n_days.R');
+source('no_visit_in_n_days.R');
+no_visit_in_n_days(10, '2011-07-13');
+no_visit_in_n_days(20, '2011-07-13');
+no_visit_in_n_days(30, '2011-07-13');
+no_visit_in_n_days(90, '2011-07-13');
+?date
+format(Sys.time(), "%a %b %d %H:%M:%S %Y");
+format(Sys.time(), "%Y-%M-%d");
+format(Sys.time(), "%Y-%v-%d");
+format(Sys.time(), "%Y-%b-%d");
+format(Sys.time(), "%Y-%m-%d");
+class(format(Sys.time(), "%Y-%m-%d"));
+source('no_visit_in_n_days.R');
+fraction_children_no_visit();
+?plot
+?plot
+source('no_visit_in_n_days.R');
+fraction_children_no_visit();
+?plot
+source('no_visit_in_n_days.R');
+fraction_children_no_visit();
+?plot
+?row.names
+?text
+x <- c(1,2,3)
+x
+as.character(x)
+source('no_visit_in_n_days.R');
+?plot
+source('no_visit_in_n_days.R');
+fraction_children_no_visit();
+source('no_visit_in_n_days.R');
+fraction_children_no_visit();
+round(0.73698679389837, 2);
+source('no_visit_in_n_days.R');
+fraction_children_no_visit();
+?plot
+?plot
+source('n_days_since_last_visit.R');
+n_days_since_last_visit('2011-07-31');
+source('n_days_since_last_visit.R');
+n_days_since_last_visit('2011-07-31');
+source('n_days_since_last_visit.R');
+n_days_since_last_visit('2011-07-31');
+source('n_days_since_last_visit.R');
+n_days_since_last_visit('2011-07-31');
+source('n_days_since_last_visit.R');
+n_days_since_last_visit('2011-07-31');
+source('no_visit_in_n_days.R');
+fraction_children_no_visit('2011-07-31');
+source('no_visit_in_n_days.R');
+fraction_children_no_visit('2011-07-31');
+source('no_visit_in_n_days.R');
+fraction_children_no_visit('2011-07-31');
+source('no_visit_in_n_days.R');
+fraction_children_no_visit('2011-07-31');
+source('no_visit_in_n_days.R');
+fraction_children_no_visit('2011-07-31');
+source('no_visit_in_n_days.R');
+fraction_children_no_visit('2011-07-31');
+?plot
+ceiling(3.4);
+source('no_visit_in_n_days.R');
+fraction_children_no_visit('2011-07-31');
+floor(3.5)
+source('no_visit_in_n_days.R');
+fraction_children_no_visit('2011-07-31');
+source('no_visit_in_n_days.R');
+fraction_children_no_visit('2011-07-31');
+x = "abc"
+y = "abc"
+x == y
+z = "abd"
+x < z
+z < x
+x <- Sys.time();
+y<-Sys.time()+3600;
+y
+as.Date("2011-12-31");
+class(as.Date("2011-12-31"));
+as.Date("2011-12-31") - 30*24*60*60
+as.Date("2011-12-31") - 30*24*60*60;
+as.Date("2011-12-31") - 30;
+class(as.Date("2011-12-31") - 30);
+as.character(as.Date("2011-12-31") - 30);
+source('no_visit_in_n_days.R');
+source('no_visit_in_n_days.R');
+variation_fraction_children_no_visit_with_time('2010-11-01', '2011-11-01', 30, 30);
+source('no_visit_in_n_days.R');
+variation_fraction_children_no_visit_with_time('2010-11-01', '2011-11-01', 30, 30);
+source('no_visit_in_n_days.R');
+variation_fraction_children_no_visit_with_time('2010-11-01', '2011-11-01', 30, 30);
+traceback();
+source('no_visit_in_n_days.R');
+variation_fraction_children_no_visit_with_time('2010-11-01', '2011-11-01', 30, 30);
+source('no_visit_in_n_days.R');
+variation_fraction_children_no_visit_with_time('2010-11-01', '2011-11-01', 30, 30);
+?plot
+source('no_visit_in_n_days.R');
+variation_fraction_children_no_visit_with_time('2011-09-01', '2011-11-01', 30, 30);
+traceback();
+variation_fraction_children_no_visit_with_time('2010-11-01', '2011-11-01', 30, 30);
+source('no_visit_in_n_days.R');
+variation_fraction_children_no_visit_with_time('2010-11-01', '2011-11-01', 30, 15);
+source('no_visit_in_n_days.R');
+variation_fraction_children_no_visit_with_time('2010-11-01', '2011-11-01', 30, 15);
+variation_fraction_children_no_visit_with_time('2010-11-01', '2011-11-01', 30, 7);
+variation_fraction_children_no_visit_with_time('2007-11-01', '2011-11-01', 90, 30);
+variation_fraction_children_no_visit_with_time('2007-11-01', '2011-11-01', 90, 15);
+variation_fraction_children_no_visit_with_time('2007-11-01', '2011-11-01', 90, 7);
+q()

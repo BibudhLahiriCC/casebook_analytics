@@ -1,0 +1,46 @@
+﻿select b.person_id
+from physical_location_trial_home_visits a, physical_location_records b
+where b.physical_location_id = a.id
+and exists (select 1 from physical_location_placements c, physical_location_records d
+            where d.physical_location_id = c.id
+            and d.person_id = b.person_id
+            and a.start_date <= c.end_date)
+and exists (select 1 from physical_location_placements e, physical_location_records f
+            where f.physical_location_id = e.id
+            and f.person_id = b.person_id
+            and a.end_date >= e.start_date)
+
+select max(1,3)
+
+select b.person_id, date(a.start_date) THVStart, date(c.end_date) FirstPlacementEnd, date(a.end_date) THVEnd, date(e.start_date) SecondPlacementStart
+from physical_location_trial_home_visits a, physical_location_records b, physical_location_placements c, physical_location_records d,
+     physical_location_placements e, physical_location_records f
+where b.physical_location_id = a.id
+and d.physical_location_id = c.id
+and d.person_id = b.person_id
+and date(c.end_date) between date(a.start_date) and date(a.end_date)
+and f.physical_location_id = e.id
+and f.person_id = b.person_id
+and date(e.start_date) between date(a.start_date) and date(a.end_date)
+--and b.person_id = 1356320
+and c.id <> e.id
+and e.start_date >= c.end_date
+
+
+
+ 
+ 
+
+
+
+
+
+
+             
+
+
+
+
+
+
+
