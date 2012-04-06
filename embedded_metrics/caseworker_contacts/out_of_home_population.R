@@ -38,14 +38,19 @@ customHistogram <- function(histogram, mainTitle, xLabel,
           );
 }
 
+#Given a data frame and the name of a dimension which is categorical, 
+#this function draws a histogram and a boxplot for each of the distinct
+#values of that dimension.
+charts_by_dimension(data, dimension)
+{
+  distinct_values_dimension <- unique(data[, dimension]);
+  
+}
+
 resolve_race <- function(american_indian, asian, black, pacific_islander, white,
                          multi_racial)
 {
   race <- "";
-  #str(paste("multi_racial = ", multi_racial, " is of type ", class(multi_racial), 
-  #          sep = ""));
-  #str(paste("white = ", white, " is of type ", class(white), 
-  #          sep = ""));
   if (isTRUE(multi_racial))
   {
    race <- "multi_racial";
@@ -128,12 +133,6 @@ out_of_home_population <- function(queryPoint)
     round(as.numeric(difftime(today, as.POSIXlt(output[, "date_of_birth"], 
                                      format="%Y-%m-%d"), units = c("days")))/365);
                          
-  #output["race"] <- resolve_race(output[, "american_indian"],
-  #                               output[, "asian"],
-  #                               output[, "black"],
-  #                               output[, "pacific_islander"],
-  #                               output[, "white"],
-  #                               output[, "multi_racial"]);
   output$race <- apply(output, 1, 
         function(row) resolve_race(as.logical(row["american_indian"]),
                                    as.logical(row["asian"]),
