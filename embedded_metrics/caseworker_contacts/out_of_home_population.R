@@ -1,5 +1,6 @@
 customHistogram <- function(histogram, mainTitle, xLabel,
-                            yLabel, fiveNumberSummary, queryPoint)
+                            yLabel, fiveNumberSummary, 
+                            queryPoint = as.character(Sys.Date()))
 {
   #If there are n bars in the histogram, then 
   #histogram$breaks is an array of (n+1) points, including
@@ -25,26 +26,18 @@ customHistogram <- function(histogram, mainTitle, xLabel,
                           "-",
                           as.character(histogram$breaks[i+1]));
   }
-  subTitle <- paste("As of ", queryPoint, ", min = ", fiveNumberSummary[1],
+  subTitle <- paste("min = ", fiveNumberSummary[1],
                     ", Q1 = ", fiveNumberSummary[2],
                     ", Median = ", fiveNumberSummary[3],
                     ", Q3 = ", fiveNumberSummary[4],
                     ", Max = ", fiveNumberSummary[5], sep = "");
   barplot(height = heights, width = widths, xlim = c(0, xAxisRightEnd),
           beside = TRUE, horiz = FALSE, main = mainTitle, xlab = xLabel,
-          ylab = yLabel, space = 0, axisnames = TRUE, cex.names = 0.8, 
+          ylab = yLabel, space = 0, axisnames = TRUE, cex.names = 1.5,
+          cex.axis = 1.5, 
           names.arg = barLabels, 
           sub = subTitle
           );
-}
-
-#Given a data frame and the name of a dimension which is categorical, 
-#this function draws a histogram and a boxplot for each of the distinct
-#values of that dimension.
-charts_by_dimension(data, dimension)
-{
-  distinct_values_dimension <- unique(data[, dimension]);
-  
 }
 
 resolve_race <- function(american_indian, asian, black, pacific_islander, white,
@@ -83,8 +76,6 @@ out_of_home_population <- function(queryPoint)
   library(RPostgreSQL);
   con <- dbConnect(PostgreSQL(), user="bibudh", host="mirror.in.mycasebook.org", 
                    port="5432", dbname="casebook2_mirror");
-  png("out_of_home_population.png");
-  par(mfrow=c(2, 1));
   statement <- paste("select p.id person_id, r.type,",
                      "to_char(p.date_of_birth, 'YYYY-MM-DD') date_of_birth,",
                      "p.gender, p.american_indian, p.asian, p.black,",
@@ -140,8 +131,140 @@ out_of_home_population <- function(queryPoint)
                                    as.logical(row["pacific_islander"]),
                                    as.logical(row["white"]),
                                    as.logical(row["multi_racial"])));
+  edges <- c(0, 6, 12, 18, 24, 30, 6000);
+  genders = unique(output[, "gender"]);
+  n_genders = length(genders);
+
+  counties = unique(output[, "county_for_case"]);
+  n_counties = length(counties);
+  cat(paste("n_counties = ", n_counties, "\n", sep = ""));
+
+  races = unique(output[, "race"]);
+  n_races = length(races);
+  cat(paste("n_races = ", n_races, "\n", sep = ""));
+
+  #Age buckets are 0-1, 2-5, 6-12, 13-16, 17, 18+
+  n_age_buckets = 6;
+
+  n_rows_of_plots = n_genders + n_counties + n_races 
+  #+ n_age_buckets
+  ;
+  
+  png("out_of_home_population.png", 
+      width = 840, height = 960, units = "px"
+      );
+  par(mfrow=c(n_rows_of_plots, 2));
+
+  for (i in 1:n_genders)
+  {
+    cat(paste("gender = ", genders[i], "\n", sep = " "));
+    filtered_output <- subset(output, (gender == genders[i]));
+    cat(paste("size of filtered_output = ", nrow(filtered_output), 
+              "\n", sep = " "));
+    histogram <- hist(filtered_output[,"days_since_last_visit"], 
+                      breaks = edges, plot = FALSE);
+    customHistogram(histogram = histogram,
+        mainTitle = paste("for gender",
+                           genders[i], ",",
+                           nrow(filtered_output), "children", sep = " "),
+         xLabel = "#days since last visit", yLabel = "Fraction of children",
+         fiveNumberSummary = fivenum(filtered_output[,"days_since_last_visit"]));
+    boxplot(x = filtered_output[,"days_since_last_visit"], 
+           outline = FALSE, horizontal = TRUE, cex.names = 1.5,
+          cex.axis = 1.5);
+  }
+
+
+  for (i in 1:n_counties)
+  {
+    cat(paste("county = ", counties[i], "\n", sep = " "));
+    filtered_output <- subset(output, (county_for_case == counties[i]));
+    cat(paste("size of filtered_output = ", nrow(filtered_output), "\n", 
+              sep = " "));
+    histogram <- hist(filtered_output[,"days_since_last_visit"], 
+                      breaks = edges, plot = FALSE);
+    customHistogram(histogram = histogram,
+        mainTitle = paste("for county",
+                           counties[i], ",",
+                           nrow(filtered_output), "children", sep = " "),
+         xLabel = "#days since last visit", yLabel = "Fraction of children",
+         fiveNumberSummary = fivenum(filtered_output[,"days_since_last_visit"]));
+    boxplot(x = filtered_output[,"days_since_last_visit"], 
+           outline = FALSE, horizontal = TRUE, cex.names = 1.5,
+          cex.axis = 1.5);
+  }
+
+  for (i in 1:n_races)
+  {
+    cat(paste("race = ", races[i], "\n", sep = " "));
+    filtered_output <- subset(output, (race == races[i]));
+    cat(paste("size of filtered_output = ", nrow(filtered_output), "\n", 
+              sep = " "));
+    histogram <- hist(filtered_output[,"days_since_last_visit"], 
+                      breaks = edges, plot = FALSE);
+    customHistogram(histogram = histogram,
+        mainTitle = paste("for race",
+                           races[i], ",",
+                           nrow(filtered_output), "children", sep = " "),
+         xLabel = "#days since last visit", yLabel = "Fraction of children",
+         fiveNumberSummary = fivenum(filtered_output[,"days_since_last_visit"]));
+    boxplot(x = filtered_output[,"days_since_last_visit"], 
+           outline = FALSE, horizontal = TRUE, cex.names = 1.5,
+          cex.axis = 1.5);
+  }
+
+  #for (i in 1:n_age_buckets)
+  #{
+  #  if (i == 1)
+  #  {
+  #    filtered_output <- subset(output, (age_rounded_in_years >= 0 & 
+  #                                       age_rounded_in_years <= 1));
+  #    title_part = "for age 0-1";
+  #  }
+  #  else if (i == 2)
+  #  {
+  #    filtered_output <- subset(output, (age_rounded_in_years >= 2 & 
+  #                                       age_rounded_in_years <= 5));
+  #    title_part = "for age 2-5";
+  #  }
+  #  else if (i == 3)
+  #  {
+  #    filtered_output <- subset(output, (age_rounded_in_years >= 6 & 
+  #                                       age_rounded_in_years <= 12));
+  #    title_part = "for age 6-12";
+  #  }
+  #  else if (i == 4)
+  #  {
+  #    filtered_output <- subset(output, (age_rounded_in_years >= 13 & 
+  #                                       age_rounded_in_years <= 16));
+  #    title_part = "for age 13-16";
+  #  }
+  #  else if (i == 5)
+  #  {
+  #    filtered_output <- subset(output, (age_rounded_in_years == 17));
+  #    title_part = "for age 17+";
+  #  }
+  #  else if (i == 6)
+  #  {
+  #    filtered_output <- subset(output, (age_rounded_in_years >= 18));
+  #    title_part = "for age 18+";
+  #  }
+
+  #  histogram <- hist(filtered_output[,"days_since_last_visit"], 
+  #                    breaks = edges, plot = FALSE);
+  #  customHistogram(histogram = histogram,
+  #      mainTitle = paste(title_part, ",",
+  #                         nrow(filtered_output), "children", sep = " "),
+  #       xLabel = "#days since last visit", yLabel = "Fraction of children",
+  #       fiveNumberSummary = fivenum(filtered_output[,"days_since_last_visit"]));
+  #  boxplot(x = filtered_output[,"days_since_last_visit"], 
+  #         outline = FALSE, horizontal = TRUE, cex.names = 1.5,
+  #        cex.axis = 1.5);
+  #}
+
+
   dbDisconnect(con);
   dev.off();
-  output;
+  #output;
 }
 
