@@ -1,0 +1,127 @@
+date()
+time()
+x <- [1,2,3]
+x <- 1
+x
+library(RPostgreSQL)
+?install
+?library
+install.packages(RPostgreSQL)
+drv <- dbDriver("PostgreSQL")
+getwd()
+?dbDriver
+??dbDriver
+library(RJDBC)
+quit()
+install.packages(dbi)
+drv <- dbDriver("PostgreSQL")
+library('RPostgreSQL')
+install.packages('RPostgreSQL')
+library('RPostgreSQL')
+?dbDriver
+drv <- dbDriver("PostgreSQL")
+??dbDriver
+drv <- dbDriver('PostgreSQL')
+library(dbi)
+install.packages(dbi)
+??dbDriver
+?library
+libPaths()
+?library
+library(lib.loc = .Library)
+drv <- dbDriver('PostgreSQL')
+con <- dbConnect(PostgreSQL(), user= "bibudhlahiri", dbname="casebook2_development")
+?dbDriver
+?dbConnect
+??dbDriver
+library(RPostgreSQL)
+??dbDriver
+?dbConnect
+??dbConnect
+drv <- dbDriver("PostgreSQL")
+?dbDriver
+drv <- DBI.dbDriver("PostgreSQL")
+library(DBI)
+drv <- dbDriver("PostgreSQL")
+library(RPostgreSQL)
+quit()
+system("env")
+Sys.setenv("PATH" = paste(Sys.getenv("PATH"),"/usr/local/bin/postgres",sep=":"))
+system("env")
+library(DBI)
+drv <- dbDriver("PostgreSQL")
+q()
+setwd('/Users/bibudhlahiri/casebook_analytics/embedded_metrics/caseworker_contacts');
+source('out_of_home_population.R');
+out_of_home_population();
+source('out_of_home_population.R');
+out_of_home_population();
+L3 <- LETTERS[1:3];
+(d <- data.frame(cbind(x=1, y=1:10), fac=sample(L3, 10, replace=TRUE)));
+names(d);
+class(names(d));
+names(mydat)[c(name)] <- paste("newname",i,sep="")#
+;
+names(d)[c(name)] <- paste("newname",i,sep="");
+names(d) <- ["first", "second", "third"];
+names(d) <- c("first", "second", "third");
+d
+?aggregare
+?aggregate
+state.x77
+?aggregate
+df <- data.frame();
+df
+d[1,2];
+d[6, "second"];
+nrows(d);
+rows(d);
+d.nrows();
+nrow(d);
+dd = as.POSIXIt("2007-12-31", format="%Y-%m-%d");
+dd = as.POSIXct("2007-12-31");
+dd
+dd = as.POSIXlt("2007-12-31", format="%Y-%m-%d");
+dd
+dd = as.POSIXlt("2007-11-31", format="%Y-%m-%d");
+dd
+dd = as.POSIXlt("2007-11-30", format="%Y-%m-%d");
+dd
+dc = Sys.Date();
+difftime(dd, dc);
+difftime(dc, dd);
+30/14
+round(30/14);
+x <- c(1,2);
+cbind(x, 3);
+x
+x <- append(x, 3);
+x
+append(x, 3);
+rbind(x , c(1, 4, 5, 6));
+x <- rbind(x , c(1, 4, 5, 6));
+x
+?rbind
+source('out_of_home_population.R');
+out_of_home_population();
+source('out_of_home_population.R');
+out_of_home_population();
+traceback();
+source('out_of_home_population.R');
+out_of_home_population();
+source('out_of_home_population.R');
+out_of_home_population();
+traceback();
+source('out_of_home_population.R');
+out_of_home_population();
+traceback();
+?e=rbind
+?rbind
+source('out_of_home_population.R');
+out_of_home_population();
+traceback();
+traceback();
+source('out_of_home_population.R');
+traceback();
+?rbind
+q()
