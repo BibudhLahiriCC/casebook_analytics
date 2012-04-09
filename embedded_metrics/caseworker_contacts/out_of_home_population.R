@@ -33,10 +33,10 @@ customHistogram <- function(histogram, mainTitle, xLabel,
                     ", Max = ", fiveNumberSummary[5], sep = "");
   barplot(height = heights, width = widths, xlim = c(0, xAxisRightEnd),
           beside = TRUE, horiz = FALSE, main = mainTitle, xlab = xLabel,
-          ylab = yLabel, space = 0, axisnames = TRUE, cex.names = 1.5,
-          cex.axis = 1.5, 
+          ylab = yLabel, cex.lab = 1.5, space = 0, axisnames = TRUE, cex.names = 1.5,
+          cex.axis = 1.5, cex.main = 1.5, font.main = 9, col.main= "blue",
           names.arg = barLabels, 
-          sub = subTitle
+          sub = subTitle, cex.sub = 1.5, font.sub = 9, col.sub = "red"
           );
 }
 
