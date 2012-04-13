@@ -27,7 +27,7 @@ customHistogram <- function(histogram, mainTitle, xLabel,
   }
   subTitle <- paste("Min = ", fiveNumberSummary[1],
                     ", Q1 = ", fiveNumberSummary[2],
-                    ", Median = ", fiveNumberSummary[3],
+                    ", Med = ", fiveNumberSummary[3],
                     ", Q3 = ", fiveNumberSummary[4],
                     ", Max = ", fiveNumberSummary[5], sep = "");
   barplot(height = heights, width = widths, xlim = c(0, xAxisRightEnd),
@@ -44,35 +44,83 @@ length_of_status <- function()
   con <- dbConnect(PostgreSQL(), user="bibudh", 
           host="staging-db-slave.c45223.blueboxgrid.com", 
           port="5432",dbname="casebook2_staging");
-  png("length_of_status.png");
-  par(mfrow=c(2, 1));
-  statement <- paste("select b.person_id, current_date - max(date(contacts.occurred_at))", 
-   " from physical_location_records, physical_location_placements, contact_people a,", 
-   " contact_people b, relationships, relationship_types, contacts",
-   " where physical_location_records.person_id = b.person_id",
-   " and physical_location_records.physical_location_id = physical_location_placements.id",
-   " and physical_location_records.physical_location_type = 'PhysicalLocation::Placement'",
-   " and date(physical_location_placements.start_date) <= current_date",
-   " and (date(physical_location_placements.end_date) is NULL or date(physical_location_placements.end_date) > current_date)",
-   " and a.contact_id = b.contact_id and a.person_id <> b.person_id",
-   " and a.person_id = relationships.strong_side_person_id and b.person_id = relationships.weak_side_person_id",
-   " and relationships.type_id = relationship_types.id and relationship_types.strong_name = 'parent' and relationship_types.weak_name = 'child'",
-   " and a.contact_id = contacts.id",
-   " group by b.person_id",
-              sep = "");
-  #str(statement);
-  res <- dbSendQuery(con, statement);
-  data <- fetch(res, n = -1);
-  edges <- c(0, 100, 200, 300, 400, 500, 1000, 2000, 3000, 4000, 5000, 6000);
-  histogram <- hist(data[,2], breaks = edges, plot = FALSE);
-  #str(histogram);
-  customHistogram(histogram = histogram, 
-         mainTitle = paste("#days since last visit with parent for", 
-                           nrow(data), "children", sep = " "),
-         xLabel = "#days since last visit", yLabel = "Fraction of children",
-         fivenum(data[,2]));
-  boxplot(x = data[,2], outline = FALSE);
+  resource_types <- c("FosterFamily", "OutOfStateResource", 
+                      "ResidentialResource");
+  n_resource_types <- length(resource_types); 
+  #Number of license states
+  for (i in 1:n_resource_types)
+  {
+   statement <- paste("select resource_id, paper_licenses.state state, ",
+                   "date(paper_licenses.created_at) created_at ", 
+                   "from paper_licenses, resources ",
+                   "where paper_licenses.license_type = 'License' ",
+                   "and paper_licenses.resource_id = resources.id ",
+                   "and resources.type = '", resource_types[i], "' ",
+                   "order by resource_id, date(paper_licenses.created_at) ",
+                   #"limit 100",
+                   sep = "");
+   cat(paste(statement, "\n", sep = ""));
+   res <- dbSendQuery(con, statement);
+   raw_data <- fetch(res, n = -1);
+   rows_fetched <- nrow(raw_data);
+   
+   if (rows_fetched > 0)
+   {
+    cat(paste("rows_fetched = ", rows_fetched, "\n", sep = ""));
+    filename <- paste("n_states_", resource_types[i], ".png", sep = "");
+    png(filename);
+    par(mfrow=c(1, 2));
+
+    data <- data.frame();
+    #There may be multiple paper licenses for the same resource
+    #in a period when the resource is in the same state. A row gets
+    #added from raw_data to data if
+    # 1) we encounter a new resource, or
+    # 2) we encounter a new state for the same resource
+    resource_id <- 0
+    state <- "";
+    for (j in 1:rows_fetched)
+    {
+     if (raw_data[j, "resource_id"] != resource_id) 
+     {
+       #new resource
+       #cat(paste("new resource for j = ", j, ", resource_id = ", 
+       #           resource_id, ", raw_data[j, resource_id] = ",
+       #           raw_data[j, "resource_id"], "\n", sep = ""));
+       resource_id <- raw_data[j, "resource_id"];
+       state <- raw_data[j, "state"];
+       row <- raw_data[j, ]
+       data <- rbind(data, row);
+     }
+     else if (raw_data[j, "state"] != state)
+     {
+       #change of state for same resource
+       #cat(paste("new state for j = ", j, ", state = ", 
+       #           state, ", raw_data[j, state] = ",
+       #           raw_data[j, "state"], "\n", sep = ""));
+       state <- raw_data[j, "state"];
+       row <- raw_data[j, ]
+       data <- rbind(data, row);
+     }
+     #else do nothing, skip row
+    } #end for (j in 1:rows_fetched)
+    n_states <- tapply(data$state, data$resource_id, length);
+    #cat(n_states);
+    edges <- c(0, 2, 4, 6, 8, 10, 12, 16);
+    histogram <- hist(n_states, breaks = edges, plot = FALSE);
+    #cat(paste(length(resource_types)));
+    #cat(paste("resource_types[i] = ", as.character(resource_types[i]), "\n", sep = "")); 
+    customHistogram(histogram = histogram, 
+         mainTitle = paste("#states, ", 
+                           nrow(n_states), resource_types[i], 
+                           "rsrcs", sep = " "),
+         xLabel = "#states", yLabel = "Fraction of resources",
+         fivenum(n_states));
+    boxplot(x = n_states, outline = FALSE);
+    dev.off();
+   }  #end if (rows_fetched > 0)
+  } #end for (i in 1:n_resource_types)
   dbDisconnect(con);
-  dev.off();
+  #dev.off();
 }
 
