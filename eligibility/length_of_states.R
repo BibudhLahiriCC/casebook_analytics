@@ -61,7 +61,7 @@ length_of_states <- function()
                    "and paper_licenses.resource_id = resources.id ",
                    "and resources.type = '", resource_types[i], "' ",
                    "order by resource_id, date(paper_licenses.created_at) ",
-                   "limit 100",
+                   #"limit 100",
                    sep = "");
    cat(paste(statement, "\n", sep = ""));
    res <- dbSendQuery(con, statement);
@@ -147,7 +147,7 @@ length_of_states <- function()
     }
 
     filename <- paste("length_of_states_", resource_types[i], ".png", sep = "");
-    png(filename,  width = 840, height = 960, units = "px");
+    png(filename,  width = 920, height = 960, units = "px");
 
     ncols <- 2;
     nrows <- ceiling(n_states_to_plot_for/ncols);
@@ -157,7 +157,7 @@ length_of_states <- function()
     for (l in 1:n_states_to_plot_for)
     {
       filtered_by_state <- subset(data, (state == states_to_plot_for[l]));
-      cat(paste("state = ", states_to_plot_for[l], "\n", sep = ""));
+      
       #The same resource can be in the same state multiple times, e.g.,
       #a resource can go through the cycle licensed 
       #-> relicensure_application_pending -> licensed
@@ -170,32 +170,30 @@ length_of_states <- function()
       nrows_filtered_by_state <- nrow(filtered_by_state);
       resource_id <- 0
       sum <- 0
-      str(filtered_by_state);
+      #str(filtered_by_state);
       for (m in 1:nrows_filtered_by_state)
       {
-        if (filtered_by_state[m, "resource_id"] != resource_id
-            & resource_id != 0)
+        if (filtered_by_state[m, "resource_id"] != resource_id)
         {
-          #Encountered a change of resource. Write sum for the previous one,
-          #and re-initialize sum.
-          summed_length_of_state <- append(summed_length_of_state, sum);
-          cat(paste("m = ", m, ", for resource id = ", resource_id, "writing summed_length_of_state = ", 
-                     summed_length_of_state, "\n", sep = ""));
-          resource_id <- filtered_by_state[m, "resource_id"];
-          sum <- filtered_by_state[m, "length_of_state"];
+          #Encountered new resource
+          if (resource_id != 0)
+          {
+            #There is a previous resource
+            summed_length_of_state <- append(summed_length_of_state, sum);
+            sum <- filtered_by_state[m, "length_of_state"];
+            resource_id <- filtered_by_state[m, "resource_id"];
+          }
+          else
+          {
+            #This is the first resource
+            sum <- filtered_by_state[m, "length_of_state"];
+            resource_id <- filtered_by_state[m, "resource_id"];
+          }
         }
         else
         {
-          #Same resource continuing, or, the first row
-          if (resource_id == 0)
-          {  
-           resource_id <- filtered_by_state[m, "resource_id"];
-          }
-          cat(paste("m = ", m, ", before adding, resource id = ", resource_id, "sum = ", 
-              sum, "\n", sep = ""));
+          #Continuing with existing resource
           sum <- sum + filtered_by_state[m, "length_of_state"];
-          cat(paste("m = ", m, ", after adding, resource id = ", resource_id, "sum = ", 
-              sum, "\n", sep = ""));
         }
       }
       #edges <- c(0, 2, 4, 6, 8, 10, 12, 16);
