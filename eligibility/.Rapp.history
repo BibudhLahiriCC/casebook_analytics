@@ -52,20 +52,19 @@ library(DBI)
 drv <- dbDriver("PostgreSQL")
 q()
 setwd('/Users/bibudhlahiri/casebook_analytics/eligibility');
-source('length_of_states.R');
-length_of_states();
-source('length_of_states.R');
-length_of_states();
-source('length_of_states.R');
-source('length_of_states.R');
-length_of_states();
-source('length_of_states.R');
-length_of_states();
-source('length_of_states.R');
-length_of_states();
-source('length_of_states.R');
-length_of_states();
-source('length_of_states.R');
-length_of_states();
-source('length_of_states.R');
-length_of_states();
+source('frequent_transitions.R');
+library(RPostgreSQL);#
+  con <- dbConnect(PostgreSQL(), user="bibudh", #
+          host="staging-db-slave.c45223.blueboxgrid.com", #
+          port="5432",dbname="casebook2_staging");
+statement <- "select distinct(state) from paper_licenses";
+res <- dbSendQuery(con, statement);#
+  all_states <- fetch(res, n = -1);
+all_states;
+class(all_states);
+statement <- "select distinct(state) from paper_licenses order by state";
+all_states;
+res <- dbSendQuery(con, statement);#
+  all_states <- fetch(res, n = -1);
+all_states;
+q();

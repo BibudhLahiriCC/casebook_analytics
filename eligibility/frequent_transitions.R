@@ -1,42 +1,15 @@
-customHistogram <- function(histogram, mainTitle, xLabel,
-                            yLabel, fiveNumberSummary)
+convert_state_to_index <- function(all_states, n_distinct_states, state)
 {
-  #If there are n bars in the histogram, then 
-  #histogram$breaks is an array of (n+1) points, including
-  #the start-point of first bucket and last point of last bucket.
-  #histogram$counts is an array of n numbers.
-  nBars <- length(histogram$counts);
-  totalFreq <- sum(histogram$counts);
-  heights <- histogram$counts/totalFreq;
-  widths <- c();
-  barLabels <- c();
-  xAxisRightEnd <- max(histogram$breaks);
-  width <- ceiling(xAxisRightEnd/nBars);
-  for (i in 1:nBars)
+  for (r in 1:n_distinct_states)
   {
-    widths[i] <- width;
-    #barLabels[i] <- as.character(histogram$breaks[i+1]);
-    leftPoint <- 0;
-    if (i > 1)
+    if (all_states[r, "state"] == state)
     {
-      leftPoint <- histogram$breaks[i] + 1; 
+      return(r);
     }
-    barLabels[i] <- paste(as.character(leftPoint),
-                          "-",
-                          as.character(histogram$breaks[i+1]));
   }
-  subTitle <- paste("Min = ", fiveNumberSummary[1],
-                    ", Q1 = ", fiveNumberSummary[2],
-                    ", Median = ", fiveNumberSummary[3],
-                    ", Q3 = ", fiveNumberSummary[4],
-                    ", Max = ", fiveNumberSummary[5], sep = "");
-  barplot(height = heights, width = widths, xlim = c(0, xAxisRightEnd),
-          beside = TRUE, horiz = FALSE, main = mainTitle, xlab = xLabel,
-          ylab = yLabel, space = 0, axisnames = TRUE, cex.names = 0.8, 
-          names.arg = barLabels, 
-          sub = subTitle
-          );
+  return(-1);
 }
+
 
 frequent_transitions <- function()
 {
@@ -47,17 +20,23 @@ frequent_transitions <- function()
   resource_types <- c("FosterFamily", "OutOfStateResource", 
                       "ResidentialResource");
   n_resource_types <- length(resource_types); 
-  #Number of license states
+  #Frquency of transition among different license states. First, get the states.
+  statement <- "select distinct(state) from paper_licenses order by state";
+  res <- dbSendQuery(con, statement);
+  all_states <- fetch(res, n = -1);
+  n_distinct_states <- nrow(all_states);
+  #Initializa a square matrix with number of rows = #states
+  transition_matrix <- mat.or.vec(n_distinct_states, n_distinct_states);
+
   for (i in 1:n_resource_types)
   {
-   statement <- paste("select resource_id, paper_licenses.state state, ",
-                   "date(paper_licenses.created_at) created_at ", 
+   statement <- paste("select resource_id, paper_licenses.state state ",
                    "from paper_licenses, resources ",
                    "where paper_licenses.license_type = 'License' ",
                    "and paper_licenses.resource_id = resources.id ",
                    "and resources.type = '", resource_types[i], "' ",
                    "order by resource_id, date(paper_licenses.created_at) ",
-                   #"limit 100",
+                   "limit 500",
                    sep = "");
    cat(paste(statement, "\n", sep = ""));
    res <- dbSendQuery(con, statement);
@@ -84,9 +63,6 @@ frequent_transitions <- function()
      if (raw_data[j, "resource_id"] != resource_id) 
      {
        #new resource
-       #cat(paste("new resource for j = ", j, ", resource_id = ", 
-       #           resource_id, ", raw_data[j, resource_id] = ",
-       #           raw_data[j, "resource_id"], "\n", sep = ""));
        resource_id <- raw_data[j, "resource_id"];
        state <- raw_data[j, "state"];
        row <- raw_data[j, ]
@@ -95,29 +71,46 @@ frequent_transitions <- function()
      else if (raw_data[j, "state"] != state)
      {
        #change of state for same resource
-       #cat(paste("new state for j = ", j, ", state = ", 
-       #           state, ", raw_data[j, state] = ",
-       #           raw_data[j, "state"], "\n", sep = ""));
        state <- raw_data[j, "state"];
        row <- raw_data[j, ]
        data <- rbind(data, row);
      }
      #else do nothing, skip row
     } #end for (j in 1:rows_fetched)
-    #n_states will have one number (number of states) for each resource.
-    n_states <- tapply(data$state, data$resource_id, length);
-    #cat(n_states);
-    edges <- c(0, 2, 4, 6, 8, 10, 12, 16);
-    histogram <- hist(n_states, breaks = edges, plot = FALSE);
-    #cat(paste(length(resource_types)));
-    #cat(paste("resource_types[i] = ", as.character(resource_types[i]), "\n", sep = "")); 
-    customHistogram(histogram = histogram, 
-         mainTitle = paste("#states, ", 
-                           nrow(n_states), resource_types[i], 
-                           "resources", sep = " "),
-         xLabel = "#states", yLabel = "Fraction of resources",
-         fivenum(n_states));
-    #boxplot(x = n_states, outline = FALSE);
+    #Go through all state transtions and update the transition matrix
+    data_size <- nrow(data);
+    resource_id <- 0
+
+    for (k in 1:data_size)
+    {
+     if (data[k, "resource_id"] != resource_id)
+     {
+       #New resource. Does not count as a state change.
+       #cat(paste("k = ", k, ", data[k, resource_id] = ", 
+       #           data[k, "resource_id"], ", resource_id = ",
+       #           resource_id, "\n", sep = ""));
+       resource_id <- data[k, "resource_id"];
+     }
+     else
+     {
+       #Continuing with same resouce. Note the change of state 
+       #between previos row and this row.
+       prev_state <- convert_state_to_index(all_states, n_distinct_states, 
+                      data[k-1, "state"]);
+       current_state <- convert_state_to_index(all_states, n_distinct_states, 
+                      data[k, "state"]);
+       #cat(paste("data[k-1, state] = ", data[k-1, "state"], 
+       #          ", data[k, state] = ", data[k, "state"],
+       #          ", prev_state = ", prev_state,
+       #          ", current_state = ", current_state, "\n", sep = ""));
+       transition_matrix[prev_state, current_state] <- 
+         transition_matrix[prev_state, current_state] + 1;  
+     }
+    } #for (k in 1:data_size)
+    all_state_as_vector <- as.vector(as.matrix(all_states));
+    rownames(transition_matrix) <- all_state_as_vector;
+    colnames(transition_matrix) <- all_state_as_vector;
+    print(transition_matrix);
     dev.off();
    }  #end if (rows_fetched > 0)
   } #end for (i in 1:n_resource_types)
