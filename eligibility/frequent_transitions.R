@@ -39,16 +39,14 @@ frequent_transitions <- function()
                    "and paper_licenses.resource_id = resources.id ",
                    "and resources.type = '", resource_types[i], "' ",
                    "order by resource_id, date(paper_licenses.created_at) ",
-                   "limit 500",
+                   #"limit 500",
                    sep = "");
-   cat(paste(statement, "\n", sep = ""));
    res <- dbSendQuery(con, statement);
    raw_data <- fetch(res, n = -1);
    rows_fetched <- nrow(raw_data);
    
    if (rows_fetched > 0)
    {
-    cat(paste("rows_fetched = ", rows_fetched, "\n", sep = ""));
     filename <- paste("frequent_transitions_", resource_types[i], ".txt", sep = "");
     
     data <- data.frame();
@@ -93,10 +91,6 @@ frequent_transitions <- function()
      {
        #Continuing with same resouce. Note the change of state 
        #between previos row and this row.
-       #prev_state <- convert_state_to_index(all_states, n_distinct_states, 
-       #               data[k-1, "state"]);
-       #current_state <- convert_state_to_index(all_states, n_distinct_states, 
-       #               data[k, "state"]);
        transition_matrix[data[k-1, "state"], data[k, "state"]] <- 
          transition_matrix[data[k-1, "state"], data[k, "state"]] + 1;  
      }
@@ -106,8 +100,7 @@ frequent_transitions <- function()
     #Print the k most frequent transitions
     k <- 5;
     #From-state, to-state and frequency
-    top_transitions <- mat.or.vec(k, 3);
-    cat(class(top_transitions));
+    top_transitions <- data.frame();
     n_elements <- 0; #number of non-zero elements in top_transitions 
     for (l in 1:n_distinct_states)
     {
@@ -118,31 +111,29 @@ frequent_transitions <- function()
           if (n_elements < k)
           {
             n_elements <- n_elements + 1;
-            cat(paste("l = ", l, ", m = ", m, "\n", sep = ""));
-            top_transitions[n_elements,1] <- l;
-            top_transitions[n_elements,2] <- m;
-
-            top_transitions[n_elements,3] <- transition_matrix[l, m];
-            top_transitions <- order(top_transitions[,3], decreasing = TRUE);
+            #cat(paste("l = ", l, ", m = ", m, "\n", sep = ""));
+            row <- c(l, m, transition_matrix[l, m]);
+            top_transitions <- rbind(top_transitions, row);
+            top_transitions <- 
+             top_transitions[order(top_transitions[,3], decreasing=TRUE),];
           }
           else if (transition_matrix[l, m] > top_transitions[k,3])
           {
             #Since top_transitions is reverse-sorted, the last element is minimum
-            top_transitions[k, 1] <- l;
-            top_transitions[k, 2] <- m;
-
-            top_transitions[k,3] <- transition_matrix[l, m];
-            top_transitions <- order(top_transitions[,3], decreasing = TRUE);
+            row <- c(l, m, transition_matrix[l, m]);
+            top_transitions[k, ] <- row;
+            top_transitions <- 
+             top_transitions[order(top_transitions[,3], decreasing=TRUE),];
           }
         }
       }
     }
-    cat(paste("The", k, "most frequent transitions for resource type",
+    cat(paste("\n\nThe", k, "most frequent transitions for resource type",
                resource_types[i], "are", "\n", sep = " "));
     for (m in 1:k)
     {
-      cat(paste(all_state_as_vector(top_transitions[m,1]), "->", 
-                all_state_as_vector(top_transitions[m,2]),
+      cat(paste(all_state_as_vector[top_transitions[m,1]], "->", 
+                all_state_as_vector[top_transitions[m,2]],
                 top_transitions[m,3], "\n", sep = " "));
     }
     sink();
