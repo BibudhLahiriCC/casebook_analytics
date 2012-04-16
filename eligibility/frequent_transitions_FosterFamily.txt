@@ -8,3 +8,9 @@ licensed                                         0             38      0      50
 pending_revocation                               0              0      0       0                           0        0                  0                               0       0
 relicensure_application_pending                  0              0      0       0                           0       48                  0                               0       0
 revoked                                          0              0      0       0                           0        1                  0                               0       0
+Added 6 at 1Added 1 at 2Added 9 at 3Added 11 at 4Added 4 at 5Added 38 at 5Added 50 at 5Added 49 at 5Added 48 at 5The 5 most frequent transitions for resource type FosterFamily are 
+50
+49
+48
+38
+11

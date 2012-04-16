@@ -8,3 +8,9 @@ licensed                                         0             73      0      63
 pending_revocation                               0              0      0       0                           0        0                  0                               0       0
 relicensure_application_pending                  0              0      0       0                           0       72                  0                               0       0
 revoked                                          0              0      0       0                           0        1                  0                               0       0
+Added 10 at 1Added 1 at 2Added 9 at 3Added 53 at 4Added 4 at 5Added 73 at 5Added 63 at 5Added 69 at 5Added 72 at 5The 5 most frequent transitions for resource type ResidentialResource are 
+73
+72
+69
+63
+53

@@ -103,6 +103,41 @@ frequent_transitions <- function()
     } #for (k in 1:data_size)
     sink(filename);
     print(transition_matrix);
+    #Print the k most frequent transitions
+    k <- 5;
+    top_transitions <- mat.or.vec(k, 1);
+    n_elements <- 0; #number of non-zero elements in top_transitions 
+    for (l in 1:n_distinct_states)
+    {
+      for (m in 1:n_distinct_states)
+      {
+        if (transition_matrix[l, m] > 0)
+        {
+          if (n_elements < k)
+          {
+            top_transitions[n_elements + 1] <- transition_matrix[l, m];
+            n_elements <- n_elements + 1;
+            top_transitions <- sort(top_transitions, decreasing = TRUE);
+            #cat(paste("Added", transition_matrix[l, m], "at",  n_elements,
+            #          sep = " "));
+          }
+          else if (transition_matrix[l, m] > top_transitions[k])
+          {
+            #Since top_transitions is reverse-sorted, the last element is minimum
+            top_transitions[k] <- transition_matrix[l, m];
+            #cat(paste("Added", transition_matrix[l, m], "at", k,
+            #          sep = " "));
+            top_transitions <- sort(top_transitions, decreasing = TRUE);
+          }
+        }
+      }
+    }
+    cat(paste("The", k, "most frequent transitions for resource type",
+               resource_types[i], "are", "\n", sep = " "));
+    for (m in 1:k)
+    {
+      cat(paste(top_transitions[m], "\n", sep = ""));
+    }
     sink();
    }  #end if (rows_fetched > 0)
   } #end for (i in 1:n_resource_types)
