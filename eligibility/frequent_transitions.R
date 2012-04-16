@@ -105,7 +105,9 @@ frequent_transitions <- function()
     print(transition_matrix);
     #Print the k most frequent transitions
     k <- 5;
-    top_transitions <- mat.or.vec(k, 1);
+    #From-state, to-state and frequency
+    top_transitions <- mat.or.vec(k, 3);
+    cat(class(top_transitions));
     n_elements <- 0; #number of non-zero elements in top_transitions 
     for (l in 1:n_distinct_states)
     {
@@ -115,19 +117,22 @@ frequent_transitions <- function()
         {
           if (n_elements < k)
           {
-            top_transitions[n_elements + 1] <- transition_matrix[l, m];
             n_elements <- n_elements + 1;
-            top_transitions <- sort(top_transitions, decreasing = TRUE);
-            #cat(paste("Added", transition_matrix[l, m], "at",  n_elements,
-            #          sep = " "));
+            cat(paste("l = ", l, ", m = ", m, "\n", sep = ""));
+            top_transitions[n_elements,1] <- l;
+            top_transitions[n_elements,2] <- m;
+
+            top_transitions[n_elements,3] <- transition_matrix[l, m];
+            top_transitions <- order(top_transitions[,3], decreasing = TRUE);
           }
-          else if (transition_matrix[l, m] > top_transitions[k])
+          else if (transition_matrix[l, m] > top_transitions[k,3])
           {
             #Since top_transitions is reverse-sorted, the last element is minimum
-            top_transitions[k] <- transition_matrix[l, m];
-            #cat(paste("Added", transition_matrix[l, m], "at", k,
-            #          sep = " "));
-            top_transitions <- sort(top_transitions, decreasing = TRUE);
+            top_transitions[k, 1] <- l;
+            top_transitions[k, 2] <- m;
+
+            top_transitions[k,3] <- transition_matrix[l, m];
+            top_transitions <- order(top_transitions[,3], decreasing = TRUE);
           }
         }
       }
@@ -136,7 +141,9 @@ frequent_transitions <- function()
                resource_types[i], "are", "\n", sep = " "));
     for (m in 1:k)
     {
-      cat(paste(top_transitions[m], "\n", sep = ""));
+      cat(paste(all_state_as_vector(top_transitions[m,1]), "->", 
+                all_state_as_vector(top_transitions[m,2]),
+                top_transitions[m,3], "\n", sep = " "));
     }
     sink();
    }  #end if (rows_fetched > 0)
