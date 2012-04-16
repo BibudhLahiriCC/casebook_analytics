@@ -1,0 +1,10 @@
+                                closed_application closed_license denied expired initial_application_pending licensed pending_revocation relicensure_application_pending revoked
+closed_application                               0              0      0       0                           0        0                  0                               0       0
+closed_license                                   0              0      0       0                           0       10                  0                               0       0
+denied                                           0              0      0       0                           1        0                  0                               0       0
+expired                                          0              0      0       0                           0        9                  0                               0       0
+initial_application_pending                     53              0      0       0                           0        4                  0                               0       0
+licensed                                         0             73      0      63                           0        0                  1                              69       7
+pending_revocation                               0              0      0       0                           0        0                  0                               0       0
+relicensure_application_pending                  0              0      0       0                           0       72                  0                               0       0
+revoked                                          0              0      0       0                           0        1                  0                               0       0

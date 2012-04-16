@@ -27,6 +27,9 @@ frequent_transitions <- function()
   n_distinct_states <- nrow(all_states);
   #Initializa a square matrix with number of rows = #states
   transition_matrix <- mat.or.vec(n_distinct_states, n_distinct_states);
+  all_state_as_vector <- as.vector(as.matrix(all_states));
+  rownames(transition_matrix) <- all_state_as_vector;
+  colnames(transition_matrix) <- all_state_as_vector;
 
   for (i in 1:n_resource_types)
   {
@@ -46,10 +49,8 @@ frequent_transitions <- function()
    if (rows_fetched > 0)
    {
     cat(paste("rows_fetched = ", rows_fetched, "\n", sep = ""));
-    filename <- paste("n_states_", resource_types[i], ".png", sep = "");
-    png(filename);
-    par(mfrow=c(1, 1));
-
+    filename <- paste("frequent_transitions_", resource_types[i], ".txt", sep = "");
+    
     data <- data.frame();
     #There may be multiple paper licenses for the same resource
     #in a period when the resource is in the same state. A row gets
@@ -86,35 +87,25 @@ frequent_transitions <- function()
      if (data[k, "resource_id"] != resource_id)
      {
        #New resource. Does not count as a state change.
-       #cat(paste("k = ", k, ", data[k, resource_id] = ", 
-       #           data[k, "resource_id"], ", resource_id = ",
-       #           resource_id, "\n", sep = ""));
        resource_id <- data[k, "resource_id"];
      }
      else
      {
        #Continuing with same resouce. Note the change of state 
        #between previos row and this row.
-       prev_state <- convert_state_to_index(all_states, n_distinct_states, 
-                      data[k-1, "state"]);
-       current_state <- convert_state_to_index(all_states, n_distinct_states, 
-                      data[k, "state"]);
-       #cat(paste("data[k-1, state] = ", data[k-1, "state"], 
-       #          ", data[k, state] = ", data[k, "state"],
-       #          ", prev_state = ", prev_state,
-       #          ", current_state = ", current_state, "\n", sep = ""));
-       transition_matrix[prev_state, current_state] <- 
-         transition_matrix[prev_state, current_state] + 1;  
+       #prev_state <- convert_state_to_index(all_states, n_distinct_states, 
+       #               data[k-1, "state"]);
+       #current_state <- convert_state_to_index(all_states, n_distinct_states, 
+       #               data[k, "state"]);
+       transition_matrix[data[k-1, "state"], data[k, "state"]] <- 
+         transition_matrix[data[k-1, "state"], data[k, "state"]] + 1;  
      }
     } #for (k in 1:data_size)
-    all_state_as_vector <- as.vector(as.matrix(all_states));
-    rownames(transition_matrix) <- all_state_as_vector;
-    colnames(transition_matrix) <- all_state_as_vector;
+    sink(filename);
     print(transition_matrix);
-    dev.off();
+    sink();
    }  #end if (rows_fetched > 0)
   } #end for (i in 1:n_resource_types)
   dbDisconnect(con);
-  #dev.off();
 }
 
