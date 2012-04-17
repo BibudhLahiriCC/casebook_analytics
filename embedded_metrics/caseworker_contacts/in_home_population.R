@@ -71,150 +71,34 @@ resolve_race <- function(american_indian, asian, black, pacific_islander, white,
   return(race);
 }
 
-out_of_home_population2 <- function(queryPoint)
-{
-  library(RPostgreSQL);
-  con <- dbConnect(PostgreSQL(), user="bibudh", host="mirror.in.mycasebook.org", 
-                   port="5432", dbname="casebook2_mirror");
-  #Select all children with open location
-  statement <- paste("select person_id, provider_id, provider_type, type, started_at, ",
-                     "case when type = 'RemovalLocation::Placement' then 1 ",
-                     "     when type = 'RemovalLocation::TrialHomeVisit' then 2 ",
-                     "     when type = 'RemovalLocation::TemporaryAbsence' then 3 ",
-                     "     when type = 'RemovalLocation::Runaway' then 4 ", 
-                     "end ",
-                     "as type_code ",
-                     "from removal_locations ",
-                     "where started_at is not null ",
-                     "and ended_at is null ",
-                     "order by person_id, type_code", sep = "");
-  res <- dbSendQuery(con, statement);
-  children_with_open_location <- fetch(res, n = -1);
-  #Copy data to a new data frame, applying some conditions in between
-  n_children_with_open_location <- nrow(children_with_open_location);
-  duplicate_deleted_data <- data.frame();
-  for (i in 1:n_children_with_open_location)
-  {
-    to_copy_row <- TRUE;
-    child_id <- children_with_open_location[i, "person_id"];
-    #If there are multiple open locations for the same child, apply the following 
-    #rules to break ties. 
-    #1) Do not copy placement or THV if there is a temp absence
-    #2) Do not copy temp absence if there is a runaway
-
-    location_type <- children_with_open_location[i, "type"];
-    if (location_type == "RemovalLocation::Placement" | 
-        location_type == "RemovalLocation::TrialHomeVisit")
-    {
-      j <- i + 1;
-      #The way the data is ordered ensures that higher-priority types will be
-      #located below lower-priority ones
-      while (j <= n_children_with_open_location & 
-              isTRUE(to_copy_row) & 
-              children_with_open_location[j, "person_id"] == child_id)
-      {
-        if (children_with_open_location[j, "type"] == "RemovalLocation::TemporaryAbsence")
-        {
-          to_copy_row <- FALSE;
-        }
-        j <- j + 1;
-      }
-    }
-
-    if (location_type == "RemovalLocation::TemporaryAbsence")
-    {
-      j <- i + 1;
-      #The way the data is ordered ensures that higher-priority types will be
-      #located below lower-priority ones
-      while (j <= n_children_with_open_location & 
-              isTRUE(to_copy_row) & 
-              children_with_open_location[j, "person_id"] == child_id)
-      {
-        if (children_with_open_location[j, "type"] == "RemovalLocation::Runaway")
-        {
-          to_copy_row <- FALSE;
-        }
-        j <- j + 1;
-      }
-    }
-    if (isTRUE(to_copy_row))
-    {
-      duplicate_deleted_data <- rbind(duplicate_deleted_data, 
-                                      children_with_open_location[i, ]); 
-    }
-  } #end for (i in 1:n_children_with_open_location)
-  n_duplicate_deleted_records <- nrow(duplicate_deleted_data);
-  #All children should have at most one open location now. Discard if 
-  #1) that location is THV or runaway
-  #2) the open location is with non-custodial parent
-  #3) the open location is out-of-state
-  further_filtered <- data.frame();
-  for (i in 1:n_duplicate_deleted_records)
-  {
-    to_copy_row <- TRUE;
-    if (duplicate_deleted_data[i, "type"] == "RemovalLocation::TrialHomeVisit"
-        & duplicate_deleted_data[i, "type"] == "RemovalLocation::Runaway")
-    {
-      to_copy_row <- FALSE;
-    }
-    statement <- paste("select q.relocating_to_non_custodial_parent ",
-                       "from removal_locations r, initial_placement_quizzes q ",
-                       "where r.initial_placement_quiz_id = q.id ", 
-                       "and r.person_id = ", duplicate_deleted_data[i, "person_id"], 
-                       sep = "");
-    res <- dbGetQuery(con, statement);
-    relocating_to_non_custodial_parent <- as.logical(res);
-    if (isTRUE(relocating_to_non_custodial_parent))
-    {
-      to_copy_row <- FALSE;
-    }
-    statement <- paste("select s.type ",
-                       "from removal_locations r, resources s ",
-                       "where r.provider_id = s.id ",
-                       "and r.person_id = ", duplicate_deleted_data[i, "person_id"], 
-                       sep = "");
-    res <- dbGetQuery(con, statement);
-    resource_type <- as.logical(res);
-    if (resource_type == "OutOfStateResource")
-    {
-      to_copy_row <- FALSE;
-    }
-    if (isTRUE(to_copy_row))
-    {
-      further_filtered <- rbind(further_filtered, 
-                                   duplicate_deleted_data[i, ]); 
-    }
-  }
-  dbDisconnect(con);
-}
-
 out_of_home_population <- function(queryPoint)
 {
   library(RPostgreSQL);
   con <- dbConnect(PostgreSQL(), user="bibudh", host="mirror.in.mycasebook.org", 
                    port="5432", dbname="casebook2_mirror");
-  statement <- paste("select p.id person_id, r.type,",
-                     "to_char(p.date_of_birth, 'YYYY-MM-DD') date_of_birth,",
-                     "p.gender, p.american_indian, p.asian, p.black,",
-                     "p.pacific_islander, p.white, p.multi_racial, p.hispanic_or_latino_origin, cn.name,",
+   statement <- paste(
+                      "select p.id person_id,", 
+                      "to_char(p.date_of_birth, 'YYYY-MM-DD') date_of_birth,",
+                      "p.gender, p.american_indian, p.asian, p.black,",
+                      "p.pacific_islander, p.white, p.multi_racial, p.hispanic_or_latino_origin,", 
                       "to_char(c.occurred_at, 'YYYY-MM-DD') last_visit_date,", 
                       "current_date - date(c.occurred_at) days_since_last_visit,",
-                      "cn.name county_for_case, r.provider_type",
-                    "from removal_locations r, people p, contacts c, contact_people cp,",
-                    "case_plan_focus_children cpfc, case_plans cl, cases cs, counties cn",
-                    "where r.type not in ('RemovalLocation::TrialHomeVisit', 'PhysicalLocation::Runaway')",
-                    "and r.person_id = p.id",
-                    "and r.start_date is not null",
-                    "and (r.end_date is null or date(r.end_date) > current_date)",
-                    "and (cp.person_id = p.id)",
-                    "and (cp.contact_id = c.id)",
-                    "and c.mode like 'Face to Face%'",
-                    "and cpfc.person_id = p.id",
-                    "and cpfc.case_plan_id = cl.id",
-                    "and cl.case_id = cs.id",
-                    "and cs.county_id = cn.id",
-                    "order by p.id, last_visit_date desc",
-                    sep = " ");
+                      "cn.name county_for_case,",
+                      "it.name",
+                      "from people p, contacts c, contact_people cp,",
+                      "case_focus_child_involvements cfci, involvement_types it,",
+                      "case_focus_children cfc, cases cs, counties cn",
+                      "where (cp.person_id = p.id)",
+                      "and (cp.contact_id = c.id)",
+                      "and c.mode like 'Face to Face%'",
+                      "and cfci.involvement_type_id = it.id",
+                      "and it.name <> 'Closed'",
+                      "and cfci.case_focus_child_id = cfc.id",
+                      "and cfc.case_id = cs.id",
+                      "and cfc.person_id = p.id",
+                      "and cs.county_id = cn.id",
+                      "order by p.id, last_visit_date desc",
+                       sep = " ");
   #cat(statement);
   res <- dbSendQuery(con, statement);
   data <- fetch(res, n = -1);
