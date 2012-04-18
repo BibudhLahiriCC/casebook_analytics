@@ -102,11 +102,51 @@ get_last_visit_date <- function(con, person_id)
 get_demographic <- function(con, person_id)
 {
   statement <- paste("select p.gender || ',' || p.american_indian || ',' || p.asian || ',' || p.black || ',' ||",
-                     "p.pacific_islander || ',' || p.white || ',' || p.multi_racial || ',' || p.hispanic_or_latino_origin ",
+                     "p.pacific_islander || ',' || p.white || ',' || p.multi_racial || ',' ||",
+                     "p.hispanic_or_latino_origin || ',' || to_char(p.date_of_birth, 'YYYY-MM-DD') ",
                      "from people p where p.id = ", person_id, sep = "");
   res <- dbGetQuery(con, statement);
   demographic <- as.character(res);
   return(demographic);
+}
+
+get_county_for_case <- function(con, person_id)
+{
+  #TODO: With same child, same case, there may be two different case plans.
+  #Will the county be always same for those case plans?
+  statement <- paste("select cn.name county_for_case ", 
+                     "from case_plan_focus_children cpfc, case_plans cl, ",
+                     "cases cs, counties cn ",
+                     "where cpfc.person_id = ", person_id, 
+                     " and cpfc.case_plan_id = cl.id ",
+                     "and cl.case_id = cs.id ",
+                     "and cs.county_id = cn.id ",
+                     "and cs.county_id is not null ",
+                     "limit 1", sep = "");
+  res <- dbGetQuery(con, statement);
+  county_for_case <- as.character(res);
+  return(county_for_case);
+}
+
+get_supervising_agency <- function(con, resource_id)
+{
+  #TODO: With same child, same case, there may be two different case plans.
+  #Will the county be always same for those case plans?
+  statement <- paste("select supervising_agency_id ",
+                     "from resources s ", 
+                     "where s.id = ", resource_id, sep = "");
+  res <- dbGetQuery(con, statement);
+  supervising_agency <- as.numeric(res);
+  return(supervising_agency);
+}
+
+get_parent_resource <- function(con, resource_id)
+{
+  statement <- paste("select parent_resource_id from resources where ",
+                     "id = ", resource_id, sep = "");
+  res <- dbGetQuery(con, statement);
+  parent_resource <- as.numeric(res);
+  return(parent_resource);
 }
 
 out_of_home_population2 <- function(queryPoint)
@@ -237,7 +277,58 @@ out_of_home_population2 <- function(queryPoint)
   #Get demographic data about the children
   further_filtered$demographic <- apply(further_filtered, 1, 
         function(row) get_demographic(con, as.numeric(row["person_id"])));
+  
+  n_further_filtered <- nrow(further_filtered);
+  for (i in 1:n_further_filtered)
+  {
+    tokenized_demographic <- unlist(strsplit(further_filtered[i, "demographic"], ","));
+    further_filtered[i, "gender"] <- tokenized_demographic[1];
+    further_filtered[i, "american_indian"] <- tokenized_demographic[2];
+    further_filtered[i, "asian"] <- tokenized_demographic[3];
+    further_filtered[i, "black"] <- tokenized_demographic[4];
+    further_filtered[i, "pacific_islander"] <- tokenized_demographic[5];
+    further_filtered[i, "white"] <- tokenized_demographic[6];
+    further_filtered[i, "multi_racial"] <- tokenized_demographic[7];
+    further_filtered[i, "hispanic_or_latino_origin"] <- tokenized_demographic[8];
+    further_filtered[i, "date_of_birth"] <- tokenized_demographic[9];
+  }
+  further_filtered$age_rounded_in_years <- 
+    round(as.numeric(difftime(today, as.POSIXlt(further_filtered[, "date_of_birth"], 
+                                     format="%Y-%m-%d"), units = c("days")))/365);
+                         
+  further_filtered$race <- apply(further_filtered, 1, 
+        function(row) resolve_race(as.logical(row["american_indian"]),
+                                   as.logical(row["asian"]),
+                                   as.logical(row["black"]),
+                                   as.logical(row["pacific_islander"]),
+                                   as.logical(row["white"]),
+                                   as.logical(row["multi_racial"])));
 
+  further_filtered$county_for_case <- apply(further_filtered, 1, 
+        function(row) get_county_for_case(con, as.numeric(row["person_id"])));
+  #TODO: Region of state county falls in
+
+  for (i in 1:n_further_filtered)
+  {
+    if (further_filtered[i, "provider_type"] == "FosterFamily")
+    {
+     further_filtered[i, "supervising_agency"] <- 
+        get_supervising_agency(con, further_filtered[i, "provider_id"]);
+    }
+    else
+    {
+      further_filtered[i, "supervising_agency"] <- NA_integer_;
+    }
+    if (further_filtered[i, "provider_type"] == "ResidentialResource")
+    {
+     further_filtered[i, "parent_resource"] <- 
+        get_parent_resource(con, further_filtered[i, "provider_id"]);
+    }
+    else
+    {
+      further_filtered[i, "parent_resource"] <- NA_integer_;
+    }
+  }
   print(further_filtered);
   dbDisconnect(con);
 }
