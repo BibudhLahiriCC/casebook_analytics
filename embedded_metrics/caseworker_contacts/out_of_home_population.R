@@ -71,6 +71,44 @@ resolve_race <- function(american_indian, asian, black, pacific_islander, white,
   return(race);
 }
 
+get_last_visit_date <- function(con, person_id)
+{
+   #cp for child, cp1 for caseworker. Both have to be present.
+   #statement <- paste(
+   #"select COALESCE(max(to_char(c.occurred_at, 'YYYY-MM-DD')), '1900-01-01') last_visit_date ",
+   #                   "from contacts c, contact_people cp, contact_people cp1 ",
+   #                   "where (cp.contact_id = c.id) ",
+   #                   "and c.mode like 'Face to Face%' ",
+   #                   "and c.successful = 't' ",
+   #                   "and cp.present = 't' ",
+   #                   "and cp1.contact_id = c.id ",
+   #                   "and cp1.person_id <> cp.person_id ",
+   #                   "and cp1.present = 't' ",
+   #                   "and cp.person_id = ", person_id, sep = "");
+   #TODO: To take care of the fact that the caseworker be present 
+   statement <- paste("select COALESCE(max(to_char(c.occurred_at, 'YYYY-MM-DD')), ",
+                      "'1900-01-01') last_visit_date ",
+                      "from contacts c, contact_people cp ",
+                      "where (cp.contact_id = c.id) ",
+                      "and c.mode like 'Face to Face%' ",
+                      "and c.successful = 't' ",
+                      "and cp.present = 't' ",
+                      "and cp.person_id = ", person_id, sep = "");
+  res <- dbGetQuery(con, statement);
+  last_visit_date <- as.character(res);
+  return(last_visit_date);
+}
+
+get_demographic <- function(con, person_id)
+{
+  statement <- paste("select p.gender || ',' || p.american_indian || ',' || p.asian || ',' || p.black || ',' ||",
+                     "p.pacific_islander || ',' || p.white || ',' || p.multi_racial || ',' || p.hispanic_or_latino_origin ",
+                     "from people p where p.id = ", person_id, sep = "");
+  res <- dbGetQuery(con, statement);
+  demographic <- as.character(res);
+  return(demographic);
+}
+
 out_of_home_population2 <- function(queryPoint)
 {
   library(RPostgreSQL);
@@ -174,7 +212,7 @@ out_of_home_population2 <- function(queryPoint)
                        "and r.person_id = ", duplicate_deleted_data[i, "person_id"], 
                        sep = "");
     res <- dbGetQuery(con, statement);
-    resource_type <- as.logical(res);
+    resource_type <- as.character(res);
     if (resource_type == "OutOfStateResource")
     {
       to_copy_row <- FALSE;
@@ -184,7 +222,23 @@ out_of_home_population2 <- function(queryPoint)
       further_filtered <- rbind(further_filtered, 
                                    duplicate_deleted_data[i, ]); 
     }
-  }
+  } #end for (i in 1:n_duplicate_deleted_records)
+  
+  #Call get_last_visit_date for every row
+  further_filtered$last_visit_date <- apply(further_filtered, 1, 
+        function(row) get_last_visit_date(con, as.numeric(row["person_id"])));
+ 
+  today <- Sys.Date();
+  further_filtered$days_since_last_visit <- 
+     round(as.numeric(difftime(today,as.POSIXlt(further_filtered$last_visit_date, 
+                                           format="%Y-%m-%d"), 
+                         units = c("days"))));
+
+  #Get demographic data about the children
+  further_filtered$demographic <- apply(further_filtered, 1, 
+        function(row) get_demographic(con, as.numeric(row["person_id"])));
+
+  print(further_filtered);
   dbDisconnect(con);
 }
 
