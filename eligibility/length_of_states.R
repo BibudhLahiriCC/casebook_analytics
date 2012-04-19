@@ -60,6 +60,8 @@ length_of_states <- function()
                    "where paper_licenses.license_type = 'License' ",
                    "and paper_licenses.resource_id = resources.id ",
                    "and resources.type = '", resource_types[i], "' ",
+                   "and (date(paper_licenses.created_at) > '1900-01-01' ",
+                         "and date(paper_licenses.created_at) <= current_date) ",
                    "order by resource_id, date(paper_licenses.created_at) ",
                    #"limit 100",
                    sep = "");
