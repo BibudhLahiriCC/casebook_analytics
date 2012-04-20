@@ -255,7 +255,7 @@ in_home_population <- function(queryPoint)
                      "where cfci.involvement_type_id = it.id ",
                      "and it.name <> 'Closed' ",
                      "and cfci.case_focus_child_id = cfc.id ",
-                     "limit 100",
+                     "limit 500",
                      sep = "");
   res <- dbSendQuery(con, statement);
   case_focus_children <- fetch(res, n = -1);

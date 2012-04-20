@@ -335,7 +335,7 @@ out_of_home_population2 <- function(queryPoint)
     }
   }
   print(further_filtered);
-  edges <- c(0, 6, 12, 18, 24, 30, 42000);
+  #edges <- c(0, 6, 12, 18, 24, 30, 42000);
   #genders = unique(further_filtered[, "gender"]);
   genders = c("Male", "Female");
   n_genders = length(genders);

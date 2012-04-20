@@ -51,9 +51,61 @@ system("env")
 library(DBI)
 drv <- dbDriver("PostgreSQL")
 q()
+statement <- "select q.relocating_to_non_custodial_parent#
+from removal_locations r, initial_placement_quizzes q#
+where r.initial_placement_quiz_id = q.id#
+and r.person_id = 1489522";
+statement
+res <- dbSendQuery(con, statement);
+library(RPostgreSQL);
+con <- dbConnect(PostgreSQL(), user="bibudh", host="mirror.in.mycasebook.org", #
+                   port="5432", dbname="casebook2_mirror");
+res <- dbSendQuery(con, statement);
+res
+children_with_open_location <- fetch(res, n = -1);
+children_with_open_location
+res <- dbGetQuery(con, statement);
+res
+class(res);
+as.logical(res);
+y <- as.logical(res);
+class(y);
+isTRUE(y);
 setwd('/Users/bibudhlahiri/casebook_analytics/embedded_metrics/caseworker_contacts');
-source('out_of_home_population.R');
-out_of_home_population();
-source('out_of_home_population.R');
-out_of_home_population();
+source('in_home_population.R');
+in_home_population();
+source('in_home_population.R');
+in_home_population();
+source('in_home_population.R');
+in_home_population();
+source('in_home_population.R');
+source('in_home_population.R');
+in_home_population();
+traceback();
+source('in_home_population.R');
+in_home_population();
+?apply
+source('in_home_population.R');
+in_home_population();
+source('in_home_population.R');
+in_home_population();
+source('in_home_population.R');
+in_home_population();
+source('in_home_population.R');
+in_home_population();
+source('in_home_population.R');
+in_home_population();
+source('in_home_population.R');
+in_home_population();
+source('in_home_population.R');
+in_home_population();
+print(Sys.time());
+source('in_home_population.R');
+source('in_home_population.R');
+in_home_population();
+in_home_population();
+source('in_home_population.R');
+in_home_population();
+library(microbenchmark)
+?library(microbenchmark);
 q();
