@@ -1,0 +1,15 @@
+select r.person_id, r.started_at location_start_date, ch.date court_hearing_date, chot.name
+from removal_locations r, court_hearings ch, court_hearing_outcomes cho, court_hearing_outcome_types chot
+where ch.person_id = r.person_id
+and cho.court_hearing_id = ch.id
+and cho.outcome_type_id = chot.id
+and chot.name in ('Adoption Finalized without Subsidy',
+                  'Adoption Finalized with Subsidy',
+                  'Guardianship Finalized without Subsidy',
+                  'Guardianship Finalized with Subsidy',
+                  'Detention Denied - Dismissal',
+                  'Court Case Closed/Child has been in foster care',
+                  'Dismissal of CHINS Petition Ordered/Child has been in foster care',
+                  'End Collaborative Care Program')
+order by r.person_id, location_start_date, court_hearing_date
+
