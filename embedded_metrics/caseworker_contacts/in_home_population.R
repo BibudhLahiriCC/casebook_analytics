@@ -215,6 +215,7 @@ has_open_location <- function(con, person_id)
   if (k > 1)
   {
     #There should not be more than one open location at this point for a child
+    cat(paste("More than one open locations for", person_id, "\n", sep = ""));
     child_has_open_location <- TRUE;   
   }
   else if (k == 1)
