@@ -114,15 +114,11 @@ get_dates <- function(baseline_date, numbers, colname)
     dates[i] <- format(as.POSIXlt(baseline + numbers[i]*24*3600, 
                                         tz = "", origin = baseline),
                        format = "%Y-%m-%d");
-    cat(paste(class(dates[i]), "\n", sep = ""));
   }
-  #print(dates);
-  cat(paste("class of dates = ", class(dates), "\n", sep = ""));
-  dates_df <- data.frame(dates);
-  #cat(paste("class of dates_df = ", class(dates_df), "\n", sep = ""));
+  #Setting stringsAsFactors = F makes sure the entries in the data frame
+  #are not factors, but character strings
+  dates_df <- as.data.frame(as.vector(dates), stringsAsFactors=F);
   colnames(dates_df) <- c(colname);
-  #cat(paste(dates_df[1, colname], "\n", sep = ""));
-  #cat(paste("class of el = ", class(dates_df[1, colname]), "\n", sep = ""));
   return(dates_df);
 }
 
@@ -208,30 +204,13 @@ get_removal_episodes <- function(con, person_id = 1)
     {
       removal_episode_number <- removal_episode_number + 1;
       removal_episodes[removal_episode_number, 1] <- removal_episode_number;
-      #cat(paste(removal_episodes[removal_episode_number, ], "\n", sep = ""));
-      cat(paste("Adding start date of RE as ", 
-                location_start_dates[i, "location_start_date"],
-                ", class = ",
-                class(location_start_dates[i, "location_start_date"]),
-                "\n", sep = ""));
       removal_episodes[removal_episode_number, "start_date"] <- 
          location_start_dates[i, "location_start_date"];
-      cat(paste("Added start date of RE as ", 
-                removal_episodes[removal_episode_number, "start_date"], 
-                 ", class = ",
-                class(removal_episodes[removal_episode_number, "start_date"]),
-                "\n", sep = ""));
       if (j < n_court_outcome_dates)
       {
         j <- j + 1;
-         cat(paste("Adding end date of RE as ", 
-                   court_outcome_dates[j, "court_hearing_date"], 
-                   "\n", sep = ""));
          removal_episodes[removal_episode_number, "end_date"] <- 
          court_outcome_dates[j, "court_hearing_date"]; 
-         cat(paste("Added end date of RE as ", 
-                 removal_episodes[removal_episode_number, "end_date"], 
-                "\n", sep = ""));
       }
     }
   }
