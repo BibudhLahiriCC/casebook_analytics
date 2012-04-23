@@ -159,11 +159,11 @@ get_removal_episodes <- function(con, person_id = 1)
                     "order by court_hearing_date", sep = "");
   #res <- dbSendQuery(con, statement);
   #court_outcome_dates <- fetch(res, n = -1);
-  location_start_dates <- get_dates("2012-02-28", 
-         c(10), "location_start_date");
-
-  court_outcome_dates <- get_dates("2012-02-28", 
-         c(1, 15), "court_hearing_date");
+  baseline <- "2012-02-29";
+  location_start_dates <- get_dates(baseline, 
+         c(3, 7, 8, 10, 11, 16, 20), "location_start_date");
+  court_outcome_dates <- get_dates(baseline, 
+         c(5, 8, 12, 13, 15, 18, 21), "court_hearing_date");
   #Set two pointers, one in location_start_dates, other in court_outcome_dates
   i <- 1; j <- 1;
   n_location_start_dates <- nrow(location_start_dates);
@@ -206,9 +206,18 @@ get_removal_episodes <- function(con, person_id = 1)
       removal_episodes[removal_episode_number, 1] <- removal_episode_number;
       removal_episodes[removal_episode_number, "start_date"] <- 
          location_start_dates[i, "location_start_date"];
-      if (j < n_court_outcome_dates)
+      #Make sure that the end date of this removal episode becomes a 
+      #date that is after the start date
+      while ((j < n_court_outcome_dates) &
+             (as.POSIXlt(court_outcome_dates[j, "court_hearing_date"], 
+                          format="%Y-%m-%d")
+              <= as.POSIXlt(removal_episodes[removal_episode_number, "start_date"],
+                            format="%Y-%m-%d")))      
       {
         j <- j + 1;
+      }
+      if (j <= n_court_outcome_dates)
+      {
          removal_episodes[removal_episode_number, "end_date"] <- 
          court_outcome_dates[j, "court_hearing_date"]; 
       }
