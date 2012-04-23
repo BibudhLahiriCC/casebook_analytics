@@ -100,13 +100,39 @@ get_county_for_case <- function(con, person_id)
   return(county_for_case);
 }
 
+#This method, given a baseline date and an array of numbers,
+#adds the numbers to that date and returns the list of dates.
+#The result is a data frame with the name of the column given by
+#colname.
+get_dates <- function(baseline_date, numbers, colname)
+{
+  n_numbers <- length(numbers);
+  dates <- mat.or.vec(n_numbers, 1);
+  baseline <- as.POSIXlt(baseline_date, format="%Y-%m-%d");
+  for (i in 1:n_numbers)
+  {
+    dates[i] <- format(as.POSIXlt(baseline + numbers[i]*24*3600, 
+                                        tz = "", origin = baseline),
+                       format = "%Y-%m-%d");
+    cat(paste(class(dates[i]), "\n", sep = ""));
+  }
+  #print(dates);
+  cat(paste("class of dates = ", class(dates), "\n", sep = ""));
+  dates_df <- data.frame(dates);
+  #cat(paste("class of dates_df = ", class(dates_df), "\n", sep = ""));
+  colnames(dates_df) <- c(colname);
+  #cat(paste(dates_df[1, colname], "\n", sep = ""));
+  #cat(paste("class of el = ", class(dates_df[1, colname]), "\n", sep = ""));
+  return(dates_df);
+}
+
 #This method gets the removal episode start and end dates for a given
 #child. We use "locations" to start removal episodes, but court outcomes
 #to end removal episodes.
 
-get_removal_episodes <- function(con, person_id)
+get_removal_episodes <- function(con, person_id = 1)
 {
-  cat(paste("person_id = ", person_id, "\n", sep = ""));
+  #cat(paste("person_id = ", person_id, "\n", sep = ""));
   #Get the start dates (and times) of the locations
   statement <- paste("select to_char(started_at, 'YYYY-MM-DD') ",
                      "location_start_date, ",
@@ -115,9 +141,9 @@ get_removal_episodes <- function(con, person_id)
                      " from removal_locations ", 
                      "where person_id = ", person_id, 
                      " order by started_at", sep = "");
-  res <- dbSendQuery(con, statement);
-  location_start_dates <- fetch(res, n = -1);
-
+  #res <- dbSendQuery(con, statement);
+  #location_start_dates <- fetch(res, n = -1);
+ 
   #Get the dates of the court outcomes
   statement <- paste("select to_char(ch.date, 'YYYY-MM-DD') ",
                      "court_hearing_date, chot.name ",
@@ -135,8 +161,13 @@ get_removal_episodes <- function(con, person_id)
                     "'Dismissal of CHINS Petition Ordered/Child has been in foster care',",
                     "'End Collaborative Care Program') ",
                     "order by court_hearing_date", sep = "");
-  res <- dbSendQuery(con, statement);
-  court_outcome_dates <- fetch(res, n = -1);
+  #res <- dbSendQuery(con, statement);
+  #court_outcome_dates <- fetch(res, n = -1);
+  location_start_dates <- get_dates("2012-02-28", 
+         c(10), "location_start_date");
+
+  court_outcome_dates <- get_dates("2012-02-28", 
+         c(1, 15), "court_hearing_date");
   #Set two pointers, one in location_start_dates, other in court_outcome_dates
   i <- 1; j <- 1;
   n_location_start_dates <- nrow(location_start_dates);
@@ -176,14 +207,31 @@ get_removal_episodes <- function(con, person_id)
     if (i <= n_location_start_dates)
     {
       removal_episode_number <- removal_episode_number + 1;
-      removal_episodes[removal_episode_number, 1] = removal_episode_number;
+      removal_episodes[removal_episode_number, 1] <- removal_episode_number;
+      #cat(paste(removal_episodes[removal_episode_number, ], "\n", sep = ""));
+      cat(paste("Adding start date of RE as ", 
+                location_start_dates[i, "location_start_date"],
+                ", class = ",
+                class(location_start_dates[i, "location_start_date"]),
+                "\n", sep = ""));
       removal_episodes[removal_episode_number, "start_date"] <- 
-      location_start_dates[i, "location_start_date"];
+         location_start_dates[i, "location_start_date"];
+      cat(paste("Added start date of RE as ", 
+                removal_episodes[removal_episode_number, "start_date"], 
+                 ", class = ",
+                class(removal_episodes[removal_episode_number, "start_date"]),
+                "\n", sep = ""));
       if (j < n_court_outcome_dates)
       {
         j <- j + 1;
-        removal_episodes[removal_episode_number, "end_date"] <- 
+         cat(paste("Adding end date of RE as ", 
+                   court_outcome_dates[j, "court_hearing_date"], 
+                   "\n", sep = ""));
+         removal_episodes[removal_episode_number, "end_date"] <- 
          court_outcome_dates[j, "court_hearing_date"]; 
+         cat(paste("Added end date of RE as ", 
+                 removal_episodes[removal_episode_number, "end_date"], 
+                "\n", sep = ""));
       }
     }
   }
