@@ -104,22 +104,22 @@ get_county_for_case <- function(con, person_id)
 #adds the numbers to that date and returns the list of dates.
 #The result is a data frame with the name of the column given by
 #colname.
-get_dates <- function(baseline_date, numbers, colname)
+get_dates <- function(baseline_date, numbers, event_type)
 {
   n_numbers <- length(numbers);
-  dates <- mat.or.vec(n_numbers, 1);
+  dates <- data.frame(matrix(nrow = n_numbers, ncol = 2));
+  colnames(dates) <- c("event_date", "event_type");
   baseline <- as.POSIXlt(baseline_date, format="%Y-%m-%d");
   for (i in 1:n_numbers)
   {
-    dates[i] <- format(as.POSIXlt(baseline + numbers[i]*24*3600, 
+    dates[i, "event_date"] <- format(as.POSIXlt(baseline + numbers[i]*24*3600, 
                                         tz = "", origin = baseline),
                        format = "%Y-%m-%d");
+    dates[i, "event_type"] <- event_type;
   }
-  #Setting stringsAsFactors = F makes sure the entries in the data frame
-  #are not factors, but character strings
-  dates_df <- as.data.frame(as.vector(dates), stringsAsFactors=F);
-  colnames(dates_df) <- c(colname);
-  return(dates_df);
+  cat(paste(event_type, "\n", sep = ""));
+  print(dates);
+  return(dates);
 }
 
 #This method gets the removal episode start and end dates for a given
@@ -147,35 +147,21 @@ get_removal_episodes2 <- function(con, person_id = 1)
                      "where ch.person_id = ", person_id, " and ",
                      "cho.court_hearing_id = ch.id ",
                      "and cho.outcome_type_id = chot.id ",
-                     "and chot.name in ('Adoption Finalized without Subsidy',",
-                                      "'Adoption Finalized with Subsidy',",
-                                      "'Guardianship Finalized without Subsidy',",
-                                      "'Guardianship Finalized with Subsidy',",
-                                      "'Detention Denied - Dismissal',",
-                                      "'Court Case Closed/Child has been in foster care',",
-                    "'Dismissal of CHINS Petition Ordered/Child has been in foster care',",
-                    "'End Collaborative Care Program') ",
+                     "and chot.ends_removal_episode = 't' ", 
                     "order by court_hearing_date", sep = "");
   #res <- dbSendQuery(con, statement);
   #court_outcome_dates <- fetch(res, n = -1);
   baseline <- "2012-02-29";
   location_start_dates <- get_dates(baseline, 
-         c(6, 13), "location_start_date");
+         c(10, 20), "location_start");
   court_outcome_dates <- get_dates(baseline, 
-         c(1, 3, 5, 9, 11, 15), "court_hearing_date");
-  #Set two pointers, one in location_start_dates, other in court_outcome_dates
-  i <- 1; j1 <- 1; j2 <- 2;
-  n_location_start_dates <- nrow(location_start_dates);
-  n_court_outcome_dates <- nrow(court_outcome_dates);
+         c(1, 15, 20), "court_hearing");
+  merged_df <- rbind(location_start_dates, court_outcome_dates);
+  merged_df <- merged_df[order(merged_df[,"event_date"]),];
+  print(merged_df);
 
-  if (n_location_start_dates > 0)
-  {
-    print(location_start_dates); 
-  }
-  if (n_court_outcome_dates > 0)
-  {
-    print(court_outcome_dates);
-  }
+  n_merged_rows <- nrow(location_start_dates) + nrow(court_outcome_dates);
+
   removal_episode_number <- 0;
   removal_episodes <- data.frame(matrix(nrow= nrow(location_start_dates), 
                                         ncol=3));
@@ -194,49 +180,56 @@ get_removal_episodes2 <- function(con, person_id = 1)
   #Next, we will eliminate all removal episodes whose lengths are one day 
   #or less.
   
-  #If there are some location_start_dates even before the first 
-  #court_hearing_date because of junk data, proceed till we get the 
-  #first location_start_date that has some preceding court_hearing_date.
-  while (as.POSIXlt(location_start_dates[i, "location_start_date"], 
-                    format="%Y-%m-%d")
-         < as.POSIXlt(court_outcome_dates[j1, "court_hearing_date"], 
-                       format="%Y-%m-%d"))
+  #If there are some court_hearing_dates even before the first 
+  #location_start_date, because of junk data, proceed till we get the 
+  #first location_start_date, because otherwise we will have no removal
+  #episodes to finish.
+  i <- 1;
+  while ((i <= n_merged_rows) 
+         & (merged_df[i, "event_type"] == "court_hearing"))
   {
     i <- i + 1;
   }
+  episode_start_date <- "";
 
-  while (i <= n_location_start_dates & j2 <= n_court_outcome_dates)
+  while (i <= n_merged_rows)
   {
-    #Date given by i should be between dates given by j1 and j2
-    while (!((as.POSIXlt(location_start_dates[i, "location_start_date"], 
-                      format="%Y-%m-%d") >= 
-              as.POSIXlt(court_outcome_dates[j1, "court_hearing_date"], 
-                      format="%Y-%m-%d")) & 
-              (as.POSIXlt(location_start_dates[i, "location_start_date"], 
-                          format="%Y-%m-%d") <= 
-               as.POSIXlt(court_outcome_dates[j2, "court_hearing_date"], 
-                      format="%Y-%m-%d"))))
+    if (merged_df[i, "event_type"] == "location_start")
     {
-      j1 <- j1 + 1;
-      j2 <- j2 + 1;
+      if (episode_start_date == "")
+      {
+        removal_episode_number <- removal_episode_number + 1;
+        episode_start_date <- merged_df[i, "event_date"];
+        removal_episodes[removal_episode_number, 1] <- removal_episode_number;
+        removal_episodes[removal_episode_number, "start_date"] <- episode_start_date;
+      }
+      #Otherwise, this is just another removal location in
+      #the current removal episode
     }
-    if (j2 <= n_court_outcome_dates)
+    else 
     {
-      removal_episode_number <- removal_episode_number + 1;
-      removal_episodes[removal_episode_number, 1] <- removal_episode_number;
-      removal_episodes[removal_episode_number, "start_date"] <- 
-        location_start_dates[i, "location_start_date"];
-      removal_episodes[removal_episode_number, "end_date"] <- 
-        court_outcome_dates[j2, "court_hearing_date"];
-      i <- i + 1;
+      #Encountered a court hearing date. End the current removal episode,
+      #if one exists.
+      if (episode_start_date != "")
+      {
+        removal_episodes[removal_episode_number, "end_date"] <- merged_df[i, "event_date"];
+        episode_start_date <- "";
+      }
     }
-  }
+    i <- i + 1;
+  } #end while (i <= n_merged_rows)
+  
   removal_episodes <- removal_episodes[1:removal_episode_number, ];
-  if (removal_episode_number > 0)
+  #Remove the removal episodes that last less than 1 day
+  filtered_rem_eps <- subset(removal_episodes,
+              (as.numeric(difftime(as.POSIXlt(end_date, format="%Y-%m-%d"),
+                                  as.POSIXlt(start_date, format="%Y-%m-%d"),
+                                  units = c("days"))) > 0)); 
+  if (nrow(filtered_rem_eps) > 0)
   {
-    print(removal_episodes);
+    print(filtered_rem_eps);
   }
-  return(removal_episodes);
+  return(filtered_rem_eps);
 }
 
 
