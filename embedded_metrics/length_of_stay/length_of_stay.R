@@ -125,6 +125,120 @@ get_dates <- function(baseline_date, numbers, colname)
 #This method gets the removal episode start and end dates for a given
 #child. We use "locations" to start removal episodes, but court outcomes
 #to end removal episodes.
+get_removal_episodes2 <- function(con, person_id = 1)
+{
+  #cat(paste("person_id = ", person_id, "\n", sep = ""));
+  #Get the start dates (and times) of the locations
+  statement <- paste("select to_char(started_at, 'YYYY-MM-DD') ",
+                     "location_start_date, ",
+                     "to_char(started_at, 'YYYY-MM-DD HH24:MI:SS') ",
+                     "location_start_date_with_time ",
+                     " from removal_locations ", 
+                     "where person_id = ", person_id, 
+                     " order by started_at", sep = "");
+  #res <- dbSendQuery(con, statement);
+  #location_start_dates <- fetch(res, n = -1);
+ 
+  #Get the dates of the court outcomes
+  statement <- paste("select to_char(ch.date, 'YYYY-MM-DD') ",
+                     "court_hearing_date, chot.name ",
+                     "from court_hearings ch, court_hearing_outcomes cho, ",
+                     "court_hearing_outcome_types chot ",
+                     "where ch.person_id = ", person_id, " and ",
+                     "cho.court_hearing_id = ch.id ",
+                     "and cho.outcome_type_id = chot.id ",
+                     "and chot.name in ('Adoption Finalized without Subsidy',",
+                                      "'Adoption Finalized with Subsidy',",
+                                      "'Guardianship Finalized without Subsidy',",
+                                      "'Guardianship Finalized with Subsidy',",
+                                      "'Detention Denied - Dismissal',",
+                                      "'Court Case Closed/Child has been in foster care',",
+                    "'Dismissal of CHINS Petition Ordered/Child has been in foster care',",
+                    "'End Collaborative Care Program') ",
+                    "order by court_hearing_date", sep = "");
+  #res <- dbSendQuery(con, statement);
+  #court_outcome_dates <- fetch(res, n = -1);
+  baseline <- "2012-02-29";
+  location_start_dates <- get_dates(baseline, 
+         c(6, 13), "location_start_date");
+  court_outcome_dates <- get_dates(baseline, 
+         c(1, 3, 5, 9, 11, 15), "court_hearing_date");
+  #Set two pointers, one in location_start_dates, other in court_outcome_dates
+  i <- 1; j1 <- 1; j2 <- 2;
+  n_location_start_dates <- nrow(location_start_dates);
+  n_court_outcome_dates <- nrow(court_outcome_dates);
+
+  if (n_location_start_dates > 0)
+  {
+    print(location_start_dates); 
+  }
+  if (n_court_outcome_dates > 0)
+  {
+    print(court_outcome_dates);
+  }
+  removal_episode_number <- 0;
+  removal_episodes <- data.frame(matrix(nrow= nrow(location_start_dates), 
+                                        ncol=3));
+  colnames(removal_episodes) <- c("episode_number", "start_date",
+                                  "end_date");
+
+  #In general, the start-date of a removal episode, 
+  #that is the outcome of a court hearing,
+  #is the first location_start_date
+  #that follows the court_hearing_date.
+  #The end date of this removal episode is the next court_hearing_date,
+  #and it should follow the start date of the removal episode by at least 
+  #2 days, since the length of a removal episode should be at least 24 hours.
+  #First, we identify all removal episodes, with start dates as the first 
+  #location_start_date between two consecutive values of court_hearing_date.
+  #Next, we will eliminate all removal episodes whose lengths are one day 
+  #or less.
+  
+  #If there are some location_start_dates even before the first 
+  #court_hearing_date because of junk data, proceed till we get the 
+  #first location_start_date that has some preceding court_hearing_date.
+  while (as.POSIXlt(location_start_dates[i, "location_start_date"], 
+                    format="%Y-%m-%d")
+         < as.POSIXlt(court_outcome_dates[j1, "court_hearing_date"], 
+                       format="%Y-%m-%d"))
+  {
+    i <- i + 1;
+  }
+
+  while (i <= n_location_start_dates & j2 <= n_court_outcome_dates)
+  {
+    #Date given by i should be between dates given by j1 and j2
+    while (!((as.POSIXlt(location_start_dates[i, "location_start_date"], 
+                      format="%Y-%m-%d") >= 
+              as.POSIXlt(court_outcome_dates[j1, "court_hearing_date"], 
+                      format="%Y-%m-%d")) & 
+              (as.POSIXlt(location_start_dates[i, "location_start_date"], 
+                          format="%Y-%m-%d") <= 
+               as.POSIXlt(court_outcome_dates[j2, "court_hearing_date"], 
+                      format="%Y-%m-%d"))))
+    {
+      j1 <- j1 + 1;
+      j2 <- j2 + 1;
+    }
+    if (j2 <= n_court_outcome_dates)
+    {
+      removal_episode_number <- removal_episode_number + 1;
+      removal_episodes[removal_episode_number, 1] <- removal_episode_number;
+      removal_episodes[removal_episode_number, "start_date"] <- 
+        location_start_dates[i, "location_start_date"];
+      removal_episodes[removal_episode_number, "end_date"] <- 
+        court_outcome_dates[j2, "court_hearing_date"];
+      i <- i + 1;
+    }
+  }
+  removal_episodes <- removal_episodes[1:removal_episode_number, ];
+  if (removal_episode_number > 0)
+  {
+    print(removal_episodes);
+  }
+  return(removal_episodes);
+}
+
 
 get_removal_episodes <- function(con, person_id = 1)
 {
@@ -188,9 +302,10 @@ get_removal_episodes <- function(con, person_id = 1)
     #In general, the start-date of a removal episode, 
     #that is the outcome of a court hearing,
     #is the first location_start_date
-    #that follows the court_hearing_date by at least 2 days.
+    #that follows the court_hearing_date.
     #The end date of this removal episode is the next court_hearing_date,
-    #and so on.
+    #and it should follow the start date of the removal episode by at least 
+    #2 days, since the length of a removal episode should be at least 24 hours.
 
     while ((i <= n_location_start_dates) & 
            (as.POSIXlt(location_start_dates[i, "location_start_date"], 
