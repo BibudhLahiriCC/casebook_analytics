@@ -74,29 +74,18 @@ resolve_race <- function(american_indian, asian, black, pacific_islander, white,
 get_last_visit_date <- function(con, person_id)
 {
    #cp for child, cp1 for caseworker. Both have to be present.
-   #statement <- paste(
-   #"select COALESCE(max(to_char(c.occurred_at, 'YYYY-MM-DD')), '1900-01-01') last_visit_date ",
-   #                   "from contacts c, contact_people cp, contact_people cp1 ",
-   #                   "where (cp.contact_id = c.id) ",
-   #                   "and c.mode like 'Face to Face%' ",
-   #                   "and c.successful = 't' ",
-   #                   "and cp.present = 't' ",
-   #                   "and cp1.contact_id = c.id ",
-   #                   "and cp1.person_id <> cp.person_id ",
-   #                   "and cp1.present = 't' ",
-   #                   "and cp.person_id = ", person_id, sep = "");
-   #TODO: To take care of the fact that the caseworker be present 
-   statement <- paste("select COALESCE(max(to_char(c.occurred_at, 'YYYY-MM-DD')), ",
+   statement <- paste("select COALESCE(max(to_char(c.occurred_at, 'YYYY-MM-DD')),",
                       "'1900-01-01') last_visit_date ",
-                      "from contacts c, contact_people cp ",
-                      "where (cp.contact_id = c.id) ",
-                      "and c.mode like 'Face to Face%' ",
+                      "from contacts c, contact_people cp, contact_people cp1 ",
+                      "where cp.person_id = ", person_id, 
+                      " and (c.id = cp.contact_id) ",
+                      "and (cp1.contact_id = cp.contact_id) ",
+                      "and cp1.person_id <> cp.person_id ",
+                      "and c.mode like 'Face to Face%' ", 
                       "and c.successful = 't' ",
-                      "and cp.present = 't' ",
-                      "and cp.person_id = ", person_id, sep = "");
-  cat(paste("Query started: ", Sys.time(), "\n", sep = ""));
+                      "and cp.present = 't' ",                   
+                      "and cp1.present = 't'", sep = "");
   res <- dbGetQuery(con, statement);
-  cat(paste("Query ended: ", Sys.time(), "\n", sep = ""));
   last_visit_date <- as.character(res);
   return(last_visit_date);
 }
@@ -241,7 +230,6 @@ with_non_custodial_parent <- function(con, person_id)
    relocating_to_non_custodial_parent <- as.logical(res);
    return(relocating_to_non_custodial_parent);
 }
-
 
 in_home_population <- function(queryPoint)
 {

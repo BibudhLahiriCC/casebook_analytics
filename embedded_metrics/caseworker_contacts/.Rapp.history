@@ -71,10 +71,9 @@ as.logical(res);
 y <- as.logical(res);
 class(y);
 isTRUE(y);
-setwd('/Users/bibudhlahiri/casebook_analytics/embedded_metrics/length_of_stay');
-source('length_of_stay.R');
-source('length_of_stay.R');
-get_removal_episodes2();
-source('length_of_stay.R');
-get_removal_episodes2();
+setwd('/Users/bibudhlahiri/casebook_analytics/embedded_metrics/caseworker_contacts');
+source('out_of_home_population.R');
+out_of_home_population();
+?survfit
+?surv
 q();

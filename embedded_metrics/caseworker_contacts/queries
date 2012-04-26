@@ -1,0 +1,19 @@
+select *
+from contact_people
+where contact_id = 5125199
+
+select strong_name, weak_name, strong_side_person_id, weak_side_person_id
+from relationships, relationship_types rt
+where relationships.type_id = rt.id
+and weak_side_person_id = 263215
+order by strong_side_person_id
+
+select * from users where person_id in (279138, 1481456)
+
+select cs.id, cpfc.id, cl.id, cs.assignee_id, u.person_id
+                     from case_plan_focus_children cpfc, case_plans cl, 
+                     cases cs, users u
+                     where cpfc.person_id = 263215
+                      and cpfc.case_plan_id = cl.id 
+                     and cl.case_id = cs.id 
+                     and cs.assignee_id = u.id
